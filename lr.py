@@ -13,13 +13,14 @@ def sparse_add(X, W):
         W[i] += v
     return W
 
+# not used
 def sparse_sub(X, W):
     for i, v in X.items():
         W[i] -= v
     return W
 
 def sparse_mul(X, r):
-    for i in X.items():
+    for i in X.keys():
         X[i] = X[i] * r
     return X
 
@@ -52,9 +53,11 @@ class lr(object):
     # <feature>: a dict
     # <label>: a binary integer
     def SGD_step(self, feature, label):
-        mid_res = label - (1 - sigmoid(sparse_dot(self.param, feature))) # scalar
+        #print("feature: ", feature)
+        mid_res = label - (1 - sigmoid(sparse_dot(feature, self.param))) # scalar
+        print("mid_res: ", mid_res)
         grad = sparse_mul(feature, mid_res * self.learning_rate) # vector
-        self.param = sparse_add(self.param, grad)
+        self.param = sparse_add(grad, self.param)
         # bias is updated along with W
 
     def train_model(self, train_file, num_epoch):
@@ -68,7 +71,7 @@ class lr(object):
 
                 sparse_word = {}
                 for i in range(1, len(split_line)):
-                    sparse_word[split_line[i]] = 1
+                    sparse_word[int(split_line[i].split(":")[0])] = 1
                 sparse_word[len(self.dic)] = 1 # add the bias feature
                 feature.append(sparse_word)
                 dataset.append(feature)
@@ -79,21 +82,25 @@ class lr(object):
                 self.SGD_step(feature[1], int(feature[0]))
 
             if Debug:
-                print("Epoch " + i + " :", end=' ')
+                print("[Epoch ", i + 1, "] ", end='')
                 print("train_error: ", self.evaluate(train_input, train_out), end=' ')
                 print("test_error: ", self.evaluate(test_input, test_out))
+                print(self.param)
 
         # TODO: how is validation data used?
 
 
     # Use lr to predict y given a list of words
     def predict(self, words):
-        words[len(self.dic)] = 1 # add the bias feature
-        return sigmoid(sparse_dot(self.param, words))
+        prob_posi = sigmoid(sparse_dot(words, self.param))
+        if (prob_posi > 0.5):
+            return 1
+        else:
+            return 0
 
     def evaluate(self, in_path, out_path):
-        error = 0
-        total = 0
+        error = 0.
+        total = 0.
 
         with open(in_path, 'r') as f_in:
             with open(out_path, 'w') as f_out:
@@ -101,12 +108,13 @@ class lr(object):
                     split_line = line.strip().split('\t')
                     words = dict()
                     for i in range(1, len(split_line)):
-                        words[split_line[i]] = 1
+                        words[int(split_line[i].split(":")[0])] = 1
+                    words[len(self.dic)] = 1 # add the bias feature
 
                     pred = self.predict(words)
-                    if pred != split_line[0]:
+                    if pred != int(split_line[0]):
                         error += 1
-                    f_out.write(pred + "\n")
+                    f_out.write(str(pred) + "\n")
                     total += 1
 
         return error / total # len(data)
