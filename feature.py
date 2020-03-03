@@ -3,7 +3,7 @@ import numpy as np
 
 Debug = False
 
-def inspect(input_file):
+def sparse_formatting(input_file):
     value_left = None
     left_count, right_count = 0., 0.
 
@@ -34,15 +34,21 @@ def inspect(input_file):
         print("gini_impurity: " + str(gini))
         print("error: " + str(error))
 
-    return gini, error
+    return representation
 
 
 if __name__ == '__main__':
-    input_file = sys.argv[1]  # path to the training input .tsv file
-    output_file = sys.argv[2] # path to the test input .tsv file
+    train_input = sys.argv[1]  # path to the training input .tsv file
+    validation_input = sys.argv[2] # path to the validation input .tsv file
+    test_input = sys.argv[3] # path to the test input .tsv file
+    dict_input = sys.argv[4] # path to the dictionary input .txt file
+    formatted_train_out = sys.argv[5] # path to output .tsv file
+    formatted_validation_out = sys.argv[6] # path to output .tsv file
+    formatted_test_out = sys.argv[7] # path to output .tsv file
+    feature_flag = int(sys.argv[8]) # an integer which specifies which model to construct
 
-    gini, error = inspect(input_file)
+    train_formatted = sparse_formatting(train_input)
 
-    with open(output_file, 'w') as f_out:
-        f_out.write("gini_impurity: " + str(gini) + "\n")
-        f_out.write("error: " + str(error))
+    with open(formatted_train_out, 'w') as train_out:
+        train_out.write("gini_impurity: " + str(gini) + "\n")
+        train_out.write("error: " + str(error))
