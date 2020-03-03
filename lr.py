@@ -9,14 +9,19 @@ def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
 def sparse_add(X, W):
-           for i, v in X.items():
-              W[i] += v
-           return W
+    for i, v in X.items():
+        W[i] += v
+    return W
 
 def sparse_sub(X, W):
     for i, v in X.items():
         W[i] -= v
     return W
+
+def sparse_mul(X, r):
+    for i in X.items():
+        X[i] = X[i] * r
+    return X
 
 def sparse_dot(X, W):
     product = 0.0
@@ -35,44 +40,54 @@ def build_dic(dict_input):
 
 class lr(object):
     def __init__(self, dic):
-        self.param = 0
         self.learning_rate = learning_rate
         self.dic = dic
+        self.param = dict()
+        # bias is added in the end
+        for i in range(len(dic) + 1):
+            self.param[i] = 0 # init all params to 0
 
+    # SGD_step: update param by taking one SGD step
+    # @param
+    # <feature>: a dict
+    # <label>: a binary integer
     def SGD_step(self, feature, label):
-        # TODO: update param by taking one SGD step
-        pass
+        mid_res = label - (1 - sigmoid(sparse_dot(self.param, feature))) # scalar
+        grad = sparse_mul(feature, mid_res * self.learning_rate) # vector
+        self.param = sparse_add(self.param, grad)
+        # bias is updated along with W
 
     def train_model(self, train_file, num_epoch):
-        self.dataset = []
-        # read from dataset
+        dataset = [] # a list of features
+        # read the dataset
         with open(train_file, 'r') as f:
-            idx = 0
             for line in f:
                 split_line = line.strip().split('\t')
-                if idx == 0:
-                    self.attriName = split_line
-                else:
-                    self.dataset.append(split_line)
-                    if split_line[-1] not in self.labelName:
-                        self.labelName.add(split_line[-1])
-                idx += 1
+                feature = []
+                feature.append(split_line[0])
 
+                sparse_word = {}
+                for i in range(1, len(split_line)):
+                    sparse_word[split_line[i]] = 1
+                sparse_word[len(self.dic)] = 1 # add the bias feature
+                feature.append(sparse_word)
+                dataset.append(feature)
+
+        # perform training
         for i in range(num_epoch):
-            for feature in self.dataset:
-                self.SGD_step(feature[1], feature[0])
+            for feature in dataset:
+                self.SGD_step(feature[1], int(feature[0]))
 
-    # Use decision tree to predict y for a single data line
-    def predict(self, node, ele):
-        if node.isleaf:
-            return node.val
-        elif node.split_info["left_value"] == ele[node.val]:
-            return self.predict(node.left, ele)
-        elif node.split_info["right_value"] == ele[node.val]:
-            return self.predict(node.right, ele)
-        else:
-            print("Error! Unknown value " + ele[node.val] + "for attribute " + self.attriName[node.val])
-            exit(-1)
+            if Debug:
+                print("Epoch " + i + " :", end=' ')
+                print("train_error: ", self.evaluate(train_input, train_out), end=' ')
+                print("test_error: ", self.evaluate(test_input, test_out))
+
+
+    # Use lr to predict y given a list of words
+    def predict(self, words):
+        words[len(self.dic)] = 1 # add the bias feature
+        return sigmoid(sparse_dot(self.param, words))
 
     def evaluate(self, in_path, out_path):
         error = 0
@@ -81,18 +96,18 @@ class lr(object):
         with open(in_path, 'r') as f_in:
             with open(out_path, 'w') as f_out:
                 for line in f_in:
-                    if total == 0:
-                        total += 1
-                        continue
                     split_line = line.strip().split('\t')
+                    words = dict()
+                    for i in range(1, len(split_line)):
+                        words[split_line[i]] = 1
 
-                    pred = self.predict(self.root, split_line)
-                    if pred != split_line[-1]:
+                    pred = self.predict(words)
+                    if pred != split_line[0]:
                         error += 1
                     f_out.write(pred + "\n")
                     total += 1
 
-        return error / (total - 1) # len(data)
+        return error / total # len(data)
 
 
 if __name__ == '__main__':
@@ -110,7 +125,7 @@ if __name__ == '__main__':
 
     model = lr(dic)
 
-    # training: build the lr model
+    # training: build lr model
     model.train_model(train_input, num_epoch)
 
     # testing: evaluate and write labels to output files
@@ -123,4 +138,4 @@ if __name__ == '__main__':
     # Output: Metrics File
     with open(metrics_out, 'w') as f_metrics:
         f_metrics.write("error(train): " + str(train_error) + "\n")
-        f_metrics.write("error(test): " + str(test_error))
+        f_metrics.write("error(test): " + str(test_error) + "\n")
