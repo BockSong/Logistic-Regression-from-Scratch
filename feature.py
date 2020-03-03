@@ -2,8 +2,15 @@ import sys
 import numpy as np
 
 Debug = False
-
 trim_th = 4
+
+def build_dic(dict_input):
+    dic = dict()
+    with open(dict_input, 'r') as f_dict:
+        for line in f_dict:
+            split_line = line.strip().split(' ')
+            dic[split_line[0]] = split_line[1]
+    return dic
 
 def formatted_output(input_file, output_file, dic, flag):
     features = []
@@ -64,11 +71,7 @@ if __name__ == '__main__':
     feature_flag = int(sys.argv[8]) # an integer which specifies which model to construct
 
     # read and build dic
-    dic = dict()
-    with open(dict_input, 'r') as f_dict:
-        for line in f_dict:
-            split_line = line.strip().split(' ')
-        dic[split_line[0]] = split_line[1]
+    dic = build_dic(dict_input)
 
     # output
     formatted_output(train_input, formatted_train_out, dic, feature_flag)
