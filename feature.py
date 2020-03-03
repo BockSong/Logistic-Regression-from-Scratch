@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-Debug = False
+Debug = True
 trim_th = 4
 
 def build_dic(dict_input):
@@ -19,10 +19,9 @@ def formatted_output(input_file, output_file, dic, flag):
         for line in f:
             feature = []
             split_line = line.strip().split('\t')
-            words = split_line.split(' ')
+            feature.append(int(split_line[0])) # feature[0] is label
 
-            feature.append(split_line[0]) # feature[0] is label
-
+            words = split_line[1].split(' ')
             sparse_dict = dict()
             for word in words:
                 if word in dic:
@@ -40,7 +39,7 @@ def formatted_output(input_file, output_file, dic, flag):
                         sparse_dict.pop(key)
 
             feature.append(sparse_dict) # feature[1] is the sparse_dict
-            features.append[feature]
+            features.append(feature)
 
             if Debug:
                 print("Length of feature: ", len(feature))

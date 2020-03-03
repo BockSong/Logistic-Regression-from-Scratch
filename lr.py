@@ -2,7 +2,7 @@ import sys
 import math
 import numpy as np
 
-Debug = False
+Debug = True
 learning_rate = 0.1
 
 def sigmoid(x):
@@ -82,6 +82,8 @@ class lr(object):
                 print("Epoch " + i + " :", end=' ')
                 print("train_error: ", self.evaluate(train_input, train_out), end=' ')
                 print("test_error: ", self.evaluate(test_input, test_out))
+
+        # TODO: how is validation data used?
 
 
     # Use lr to predict y given a list of words
