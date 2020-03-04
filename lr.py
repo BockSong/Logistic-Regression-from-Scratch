@@ -48,16 +48,30 @@ class lr(object):
         for i in range(len(dic) + 1):
             self.param[i] = 0 # init all params to 0
 
+    def print_param(self):
+        print("{", end = "")
+        for key in self.param.keys():
+            if self.param[key] != 0:
+                print(key, ": [", round(self.param[key], 5), end = "] ")
+        print("}")
+
     # SGD_step: update param by taking one SGD step
     # @param
     # <feature>: a dict
     # <label>: a binary integer
     def SGD_step(self, feature, label):
+        #print("label: ", label)
         #print("feature: ", feature)
-        mid_res = label - (1 - sigmoid(sparse_dot(feature, self.param))) # scalar
-        print("mid_res: ", mid_res)
+        s1 = sparse_dot(feature, self.param)
+        #print("s1: ", s1)
+        #mid_res = label - (1 - sigmoid(s1)) # scalar
+        mid_res = label - math.exp(s1) / (1 + math.exp(s1)) # scalar
+        #print("mid_res: ", mid_res)
         grad = sparse_mul(feature, mid_res * self.learning_rate) # vector
+        #print("grad: ", grad)
         self.param = sparse_add(grad, self.param)
+        #print("param: ")
+        #self.print_param()
         # bias is updated along with W
 
     def train_model(self, train_file, num_epoch):
@@ -78,24 +92,35 @@ class lr(object):
 
         # perform training
         for i in range(num_epoch):
+            j = 0
             for feature in dataset:
+                #print("Step ", j + 1, ":")
                 self.SGD_step(feature[1], int(feature[0]))
+                j += 1
+                #print("train_error: ", self.evaluate(train_input, train_out), end=' ')
+                #print("test_error: ", self.evaluate(test_input, test_out))
+                #if j == 30:
+                #    break
 
             if Debug:
+                #print("param: ")
+                #self.print_param()
                 print("[Epoch ", i + 1, "] ", end='')
                 print("train_error: ", self.evaluate(train_input, train_out), end=' ')
                 print("test_error: ", self.evaluate(test_input, test_out))
-                print(self.param)
-
-        # TODO: how is validation data used?
 
 
     # Use lr to predict y given a list of words
     def predict(self, words):
-        prob_posi = sigmoid(sparse_dot(words, self.param))
+        mid = sparse_dot(words, self.param)
+        #print(mid)
+        prob_posi = sigmoid(mid)
+        #print(prob_posi)
         if (prob_posi > 0.5):
+            #print("you predict 1")
             return 1
         else:
+            #print("you predict 0")
             return 0
 
     def evaluate(self, in_path, out_path):
